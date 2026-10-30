@@ -1,0 +1,226 @@
+<view wx:if="{{ready}}" class="dashboard-page page-shell">
+  <view class="dashboard-hero">
+    <view class="hero-grid"></view>
+    <view class="hero-halo"></view>
+    <view class="hero-archive-code">1037</view>
+
+    <view class="hero-nav">
+      <view class="switch-major" bindtap="goHome" hover-class="nav-hover">
+        <text class="switch-icon">‹</text>
+        <text>切换专业</text>
+      </view>
+      <view class="demo-pill">个人开发 · 非官方</view>
+    </view>
+
+    <view class="hero-motto">明德厚学 · 求是创新</view>
+    <view class="major-kicker">{{major.college}}</view>
+    <view class="major-heading">{{major.name}}</view>
+    <view class="major-subline">{{major.degree}} · {{major.duration}} · {{selectedCount}} 门已录</view>
+
+    <view class="hero-score">
+      <view class="score-main">
+        <text class="score-value">{{total.earnedText}}</text>
+        <text class="score-divider">/</text>
+        <text class="score-required">{{total.requiredText}}</text>
+      </view>
+      <text class="score-unit">学分</text>
+      <view class="score-percent">{{total.percent}}%</view>
+    </view>
+
+    <view class="hero-progress-track">
+      <view class="hero-progress-fill" style="{{total.progressStyle}}"></view>
+    </view>
+    <view class="hero-progress-meta">
+      <text>毕业总学分要求 {{total.requiredText}}</text>
+      <text wx:if="{{!total.met}}">还差 {{total.gapText}} 学分</text>
+      <text wx:else>总学分已达标</text>
+    </view>
+  </view>
+
+  <view class="dashboard-content">
+    <view class="action-grid rise-in">
+      <view class="action-primary" bindtap="goInput" hover-class="action-primary-hover">
+        <view class="action-icon action-icon-light">+</view>
+        <view class="action-copy">
+          <text class="action-title">录入已修课程</text>
+          <text class="action-sub">勾选课程，自动重算</text>
+        </view>
+        <text class="action-arrow">→</text>
+      </view>
+
+      <view class="action-warning" bindtap="goWarning" hover-class="action-warning-hover">
+        <view class="warning-count">{{warningCount}}</view>
+        <view class="action-copy">
+          <text class="action-title warning-title">查看自查预警</text>
+          <text class="action-sub warning-sub">未达标项集中查看</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{transferPromptVisible}}" class="transfer-card">
+      <view class="transfer-card-top">
+        <view class="transfer-mark">转</view>
+        <view class="transfer-heading">
+          <text class="transfer-title">检测到转专业共同课程</text>
+          <text class="transfer-subtitle">来自：{{transferFromMajorName}}</text>
+        </view>
+      </view>
+      <view class="transfer-metrics">
+        <text>{{transferCourseCount}} 门课程</text>
+        <text>{{transferCreditsText}} 学分</text>
+        <text>{{transferHoursText}} 学时</text>
+      </view>
+      <view class="transfer-course-list">
+        <text wx:for="{{transferCourseNames}}" wx:key="*this" class="transfer-course-tag">{{item}}</text>
+      </view>
+      <view wx:if="{{transferSkippedCount}}" class="transfer-skip-note">
+        {{transferSkippedCount}} 门课程因新专业互斥规则未自动导入
+      </view>
+      <view class="transfer-actions">
+        <button class="transfer-import" bindtap="importTransfer">导入共同课程</button>
+        <button class="transfer-dismiss" bindtap="dismissTransfer">暂不导入</button>
+      </view>
+    </view>
+
+    <view
+      class="academic-card academic-{{academicAlert.level}} rise-in"
+      bindtap="goWarning"
+      hover-class="academic-card-hover"
+    >
+      <view class="academic-top">
+        <view class="academic-symbol academic-symbol-{{academicAlert.level}}">
+          <text wx:if="{{academicAlert.level === 'red'}}">!</text>
+          <text wx:elif="{{academicAlert.level === 'yellow'}}">!</text>
+          <text wx:elif="{{academicAlert.level === 'safe'}}">✓</text>
+          <text wx:else>i</text>
+        </view>
+        <view class="academic-copy">
+          <view class="academic-title-row">
+            <text class="academic-title">秋季学业自查</text>
+            <text class="academic-status academic-status-{{academicAlert.level}}">
+              {{academicAlert.levelText}}
+            </text>
+          </view>
+          <text class="academic-summary">{{academicAlert.summary}}</text>
+        </view>
+        <text class="academic-arrow">→</text>
+      </view>
+
+      <view wx:if="{{academicAlert.eligible}}" class="academic-thresholds">
+        <view class="threshold-chip">
+          <text class="threshold-name">黄牌线</text>
+          <text class="threshold-number">低于 {{academicAlert.yellowThresholdText}}</text>
+        </view>
+        <view class="threshold-chip threshold-chip-red">
+          <text class="threshold-name">红牌线</text>
+          <text class="threshold-number">低于 {{academicAlert.redThresholdText}}</text>
+        </view>
+        <text class="threshold-grade">{{academicAlert.gradeLabel}}</text>
+      </view>
+
+      <view wx:if="{{academicAlert.actionRequired}}" class="academic-action">
+        {{academicAlert.actionText}}
+      </view>
+      <view wx:else class="academic-safe-line">
+        <text>{{academicAlert.ratioText}}</text>
+        <text class="academic-more">去测算</text>
+      </view>
+    </view>
+
+    <view class="section-heading">
+      <view>
+        <text class="section-title">模块进度</text>
+        <text class="section-subtitle">按最低要求逐项核对</text>
+      </view>
+      <view class="status-summary {{missingCount ? 'has-warning' : 'all-clear'}}">
+        {{missingCount ? missingCount + ' 项待补齐' : '全部达标'}}
+      </view>
+    </view>
+
+    <view
+      wx:for="{{modules}}"
+      wx:key="id"
+      class="module-card card-surface rise-in {{item.met ? 'module-ok' : 'module-warning'}}"
+      style="animation-delay: {{index * 35}}ms;"
+    >
+      <view class="module-top">
+        <view class="module-index">{{index + 1}}</view>
+        <view class="module-heading">
+          <view class="module-name-row">
+            <text class="module-name">{{item.name}}</text>
+            <text class="module-category">{{item.category}}</text>
+          </view>
+          <text class="module-description">{{item.description}}</text>
+        </view>
+        <view class="module-status {{item.met ? 'status-ok' : 'status-warning'}}">
+          {{item.met ? '已达标' : '待补齐'}}
+        </view>
+      </view>
+
+      <view class="module-numbers">
+        <text class="module-earned">{{item.earnedText}}</text>
+        <text class="module-min">/ {{item.minCreditsText}} 学分</text>
+        <text wx:if="{{item.minCoursesText}}" class="module-course-count">
+          · {{item.completedCount}}/{{item.minCoursesText}} 门
+        </text>
+      </view>
+
+      <view class="module-track">
+        <view
+          class="module-fill {{item.met ? 'module-fill-ok' : 'module-fill-warning'}}"
+          style="{{item.progressStyle}}"
+        ></view>
+      </view>
+
+      <view class="module-bottom">
+        <text wx:if="{{!item.met}}" class="module-warning-text">{{item.warningText}}</text>
+        <text wx:else class="module-ok-text">最低要求已满足</text>
+        <text class="module-percent">{{item.percent}}%</text>
+      </view>
+    </view>
+
+    <view class="section-heading rules-heading">
+      <view>
+        <text class="section-title">特殊规则</text>
+        <text class="section-subtitle">组合学分与二选一课程</text>
+      </view>
+    </view>
+
+    <view
+      wx:for="{{rules}}"
+      wx:key="id"
+      class="rule-card rise-in status-bg-{{item.status}}"
+    >
+      <view class="rule-symbol status-symbol-{{item.status}}">
+        <text wx:if="{{item.status === 'ok'}}">✓</text>
+        <text wx:elif="{{item.status === 'warning'}}">!</text>
+        <text wx:else>i</text>
+      </view>
+      <view class="rule-body">
+        <view class="rule-title-row">
+          <text class="rule-title">{{item.title}}</text>
+          <text class="rule-status status-text-{{item.status}}">{{item.statusText}}</text>
+        </view>
+        <text class="rule-description">{{item.text}}</text>
+        <text wx:if="{{item.valueText}}" class="rule-value">{{item.valueText}}</text>
+      </view>
+    </view>
+
+    <view class="calc-note card-surface">
+      <view class="calc-note-title">计算口径</view>
+      <view class="calc-note-text">总进度按已勾选课程的学分直接累加；模块达标同时检查最低学分、课程门数与互斥规则。超额学分仍计入总进度，但模块进度条最高显示 100%。</view>
+    </view>
+
+    <view class="dashboard-footer">
+      <text>1037号森林 · 喻家山麓</text>
+      <text>{{major.sourceLabel}}</text>
+      <text>数据保存在本机并支持云同步</text>
+      <text>个人开发 · 非官方工具 · 结果仅供参考</text>
+    </view>
+  </view>
+</view>
+
+<view wx:else class="loading-state page-shell">
+  <view class="loading-ring"></view>
+  <text>正在读取培养方案…</text>
+</view>

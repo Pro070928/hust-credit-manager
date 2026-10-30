@@ -1,0 +1,237 @@
+<view wx:if="{{ready}}" class="input-page page-shell">
+  <view class="input-hero">
+    <view class="input-hero-pattern"></view>
+    <view class="input-seal">1037</view>
+    <view class="input-kicker">HUST · 1037 COURSE LEDGER</view>
+    <view class="input-title">课程学时台账</view>
+    <view class="input-copy">个人开发、非官方课程自查工具。按已完成学时折算学分，结果仅供本人参考。</view>
+
+    <view class="input-summary">
+      <view class="summary-column">
+        <text class="summary-value">{{selectedCreditsText}}</text>
+        <text class="summary-label">已得学分</text>
+      </view>
+      <view class="summary-line"></view>
+      <view class="summary-column">
+        <text class="summary-value">{{selectedHoursText}}</text>
+        <text class="summary-label">已修学时</text>
+      </view>
+      <view class="summary-line"></view>
+      <view class="summary-column">
+        <text class="summary-value">{{selectedCount}}</text>
+        <text class="summary-label">已选课程</text>
+      </view>
+      <view class="summary-line"></view>
+      <view class="summary-column">
+        <text class="summary-value">{{totalPercent}}%</text>
+        <text class="summary-label">总进度</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="input-content">
+    <view class="input-toolbar">
+      <view class="major-mini">
+        <text class="major-mini-name">{{major.name}}</text>
+        <text class="major-mini-meta">毕业要求 {{major.totalCreditsText}} 学分</text>
+      </view>
+      <view class="clear-button" bindtap="clearAll" hover-class="clear-hover">清空</view>
+    </view>
+
+    <view class="data-protection">
+      <view class="data-protection-copy">
+        <text class="data-protection-title">自动保存已开启</text>
+        <text class="data-protection-time">上次保存：{{savedAtText}}</text>
+        <text class="data-protection-cloud">云同步：{{cloudStatusText}}</text>
+      </view>
+      <view class="data-protection-actions">
+        <text class="data-action" bindtap="copyBackup">复制备份码</text>
+        <text class="data-action data-action-restore" bindtap="restoreBackup">恢复备份</text>
+      </view>
+    </view>
+
+    <view class="semester-caption">按学期筛选</view>
+    <scroll-view class="semester-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="semester-list">
+        <view
+          wx:for="{{semesterOptions}}"
+          wx:key="*this"
+          class="semester-chip {{item === activeSemester ? 'semester-chip-active' : ''}}"
+          data-value="{{item}}"
+          bindtap="onSemesterSelect"
+        >
+          {{item}}
+        </view>
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{hasConflict}}" class="conflict-banner">
+      <view class="conflict-mark">!</view>
+      <view class="conflict-copy">
+        <text class="conflict-title">发现互斥课程</text>
+        <text class="conflict-text">{{conflictText}}</text>
+        <text class="conflict-hint">请取消其中一门后再保存。</text>
+      </view>
+    </view>
+
+    <view class="input-note">
+      <view class="note-line"></view>
+      <text>按模块和学期勾选课程。完成学时可以逐小时调整，学分按“课程学分 × 完成学时 ÷ 总学时”折算。</text>
+    </view>
+
+    <view
+      wx:for="{{moduleGroups}}"
+      wx:for-index="moduleIndex"
+      wx:key="id"
+      class="course-group card-surface rise-in"
+      style="animation-delay: {{index * 30}}ms;"
+    >
+      <view class="group-head">
+        <view class="group-heading">
+          <text class="group-name">{{item.name}}</text>
+          <text class="group-description">{{item.description}}</text>
+        </view>
+        <view class="group-score {{item.requirementMet ? 'group-score-ok' : ''}}">
+          <text class="group-earned">{{item.earnedText}}</text>
+          <text class="group-min">/ {{item.minCreditsText}}</text>
+        </view>
+      </view>
+
+      <view class="group-meta">
+        <text>{{item.selectedCountText}}</text>
+        <text>{{item.requirementText}}</text>
+      </view>
+      <view class="group-track">
+        <view class="group-fill {{item.requirementMet ? 'group-fill-ok' : ''}}" style="{{item.progressStyle}}"></view>
+      </view>
+
+      <view class="course-list">
+        <view
+          wx:for="{{item.courses}}"
+          wx:for-item="course"
+          wx:for-index="courseIndex"
+          wx:key="id"
+          class="course-item"
+        >
+          <view
+            class="course-row {{course.selected ? 'course-selected' : ''}}"
+            data-id="{{course.id}}"
+            bindtap="toggleCourse"
+            hover-class="course-hover"
+          >
+            <view class="check-box {{course.selected ? 'check-box-on' : ''}}">
+              <text wx:if="{{course.selected}}" class="check-mark">✓</text>
+            </view>
+            <view class="course-body">
+              <view class="course-name-row">
+                <text class="course-name">{{course.name}}</text>
+                <text wx:if="{{course.choiceGroupLabel}}" class="choice-tag">{{course.choiceGroupLabel}}</text>
+              </view>
+              <view class="course-meta-row">
+                <text class="attribute-tag">{{course.attribute}}</text>
+                <text class="course-term">{{course.term}}</text>
+                <text class="course-hours">{{course.hoursText}} 学时</text>
+              </view>
+            </view>
+            <view class="course-credit">
+              <text class="credit-value">{{course.selected ? course.earnedText : course.creditsText}}</text>
+              <text class="credit-unit">{{course.selected ? '已得学分' : '学分'}}</text>
+            </view>
+          </view>
+
+          <view wx:if="{{course.selected}}" class="hours-editor" catchtap="noop">
+            <view class="hours-topline">
+              <text class="hours-caption">已完成学时</text>
+              <text class="hours-earned">{{course.earnedText}} 学分</text>
+            </view>
+            <view class="hours-control-row">
+              <view class="hours-stepper">
+                <button
+                  class="hours-step"
+                  data-id="{{course.id}}"
+                  data-delta="-1"
+                  catchtap="onHoursStep"
+                >−</button>
+                <input
+                  class="hours-input"
+                  type="number"
+                  value="{{course.completedHours}}"
+                  data-id="{{course.id}}"
+                  bindblur="onHoursInput"
+                />
+                <button
+                  class="hours-step"
+                  data-id="{{course.id}}"
+                  data-delta="1"
+                  catchtap="onHoursStep"
+                >+</button>
+              </view>
+              <text class="hours-total">/ {{course.hoursText}} 学时</text>
+              <view class="hours-quick">
+                <text
+                  class="hours-quick-item"
+                  data-id="{{course.id}}"
+                  data-mode="zero"
+                  catchtap="onHoursQuick"
+                >清零</text>
+                <text
+                  class="hours-quick-item"
+                  data-id="{{course.id}}"
+                  data-mode="full"
+                  catchtap="onHoursQuick"
+                >修满</text>
+              </view>
+            </view>
+            <slider
+              class="hours-slider"
+              min="0"
+              max="{{course.hours}}"
+              step="1"
+              value="{{course.completedHours}}"
+              data-id="{{course.id}}"
+              data-module="{{moduleIndex}}"
+              data-course="{{courseIndex}}"
+              activeColor="#0B579F"
+              backgroundColor="#DFE9F4"
+              block-color="#0B579F"
+              block-size="18"
+              bindchanging="onHoursChanging"
+              bindchange="onHoursChange"
+            />
+            <view class="hours-progress">
+              <view class="hours-progress-fill" style="{{course.completionStyle}}"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{emptySemester}}" class="empty-semester card-surface">
+      <text class="empty-semester-title">该学期暂无课程</text>
+      <text class="empty-semester-copy">可以切换到其他学期，或选择“全部学期”查看完整课程库。</text>
+    </view>
+
+    <view class="bottom-disclaimer">
+      本工具由个人开发，不接入学校系统。课程库由培养方案自动抽取并去重，正式学分认定请以学校教务系统与培养方案为准。
+    </view>
+  </view>
+
+  <view class="save-bar">
+    <view class="save-summary">
+      <text class="save-credit">{{selectedCreditsText}}</text>
+      <view class="save-copy">
+        <text class="save-label">已选学分</text>
+        <text class="save-count">{{selectedCount}} 门 · {{selectedHoursText}} 学时</text>
+      </view>
+    </view>
+    <button class="save-button" bindtap="save" hover-class="save-button-hover">
+      {{hasConflict ? '检查并保存' : '保存进度'}}
+    </button>
+    <view class="safe-bottom"></view>
+  </view>
+</view>
+
+<view wx:else class="input-loading page-shell">
+  <view class="input-loading-ring"></view>
+  <text>正在加载课程库…</text>
+</view>

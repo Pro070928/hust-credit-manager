@@ -1,0 +1,45 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/dashboard/dashboard",
+    "pages/input/input",
+    "pages/warning/warning"
+  ],
+  "subPackages": [
+    {
+      "root": "cohort2024",
+      "pages": [
+        "pages/dashboard/dashboard",
+        "pages/input/input",
+        "pages/warning/warning"
+      ]
+    },
+    {
+      "root": "cohort2025",
+      "pages": [
+        "pages/dashboard/dashboard",
+        "pages/input/input",
+        "pages/warning/warning"
+      ]
+    },
+    {
+      "root": "cohort2023",
+      "pages": [
+        "pages/dashboard/dashboard",
+        "pages/input/input",
+        "pages/warning/warning"
+      ]
+    }
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#0B4F9C",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "hust学分管家",
+    "backgroundColor": "#F3F1EA",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "renderer": "webview",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}

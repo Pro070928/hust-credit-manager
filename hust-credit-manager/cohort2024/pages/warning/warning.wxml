@@ -1,0 +1,217 @@
+<view wx:if="{{ready}}" class="warning-page page-shell">
+  <view class="warning-hero">
+    <view class="warning-rings"></view>
+    <view class="warning-seal">1037</view>
+    <view class="alert-mark">!</view>
+    <view class="warning-kicker">HUST · 1037 · 非官方自查</view>
+    <view class="warning-title">学业自查预警</view>
+    <view class="warning-copy">{{major.name}} · 模块缺口与秋季规则模拟测算</view>
+
+    <view class="warning-unofficial">
+      <text class="warning-unofficial-mark">非官方</text>
+      <text class="warning-unofficial-copy">个人模拟结果，不构成学校学籍处理结论</text>
+    </view>
+
+    <view class="warning-overview">
+      <view class="overview-item">
+        <text class="overview-value">{{warningCount}}</text>
+        <text class="overview-label">模块/规则待办</text>
+      </view>
+      <view class="overview-divider"></view>
+      <view class="overview-item">
+        <text class="overview-value">{{moduleWarnings.length}}</text>
+        <text class="overview-label">未达标模块</text>
+      </view>
+      <view class="overview-divider"></view>
+      <view class="overview-item">
+        <text class="overview-value">{{ruleWarnings.length}}</text>
+        <text class="overview-label">规则提醒</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="warning-content">
+    <view class="total-gap-card card-surface">
+      <view class="gap-icon {{total.met ? 'gap-icon-ok' : ''}}">
+        <text wx:if="{{total.met}}">✓</text>
+        <text wx:else>∑</text>
+      </view>
+      <view class="gap-copy">
+        <text class="gap-title">总学分进度</text>
+        <text class="gap-meta">已修 {{total.earnedText}} / 需修 {{total.requiredText}} 学分</text>
+      </view>
+      <view class="gap-value {{total.met ? 'gap-value-ok' : ''}}">
+        <text wx:if="{{!total.met}}">{{total.gapText}}</text>
+        <text wx:else>达标</text>
+        <text class="gap-unit">{{total.met ? '' : '学分缺口'}}</text>
+      </view>
+    </view>
+
+    <view class="academic-policy card-surface academic-policy-{{academicAlert.level}}">
+      <view class="policy-head">
+        <view class="policy-symbol policy-symbol-{{academicAlert.level}}">
+          <text wx:if="{{academicAlert.level === 'red'}}">!</text>
+          <text wx:elif="{{academicAlert.level === 'yellow'}}">!</text>
+          <text wx:elif="{{academicAlert.level === 'safe'}}">✓</text>
+          <text wx:else>i</text>
+        </view>
+        <view class="policy-heading">
+          <text class="policy-title">秋季学业自查测算</text>
+          <text class="policy-subtitle">{{academicAlert.gradeLabel}} · 此前黄牌 {{academicAlert.previousYellows}} 次</text>
+        </view>
+        <text class="policy-status policy-status-{{academicAlert.level}}">
+          {{academicAlert.levelText}}
+        </text>
+      </view>
+
+      <view class="policy-controls">
+        <view class="policy-picker-wrap">
+          <view class="policy-picker policy-picker-readonly" bindtap="goIndex">
+            <text class="policy-label">当前年级</text>
+            <text class="policy-value">{{academicAlert.gradeLabel}}</text>
+            <text class="policy-change">首页修改</text>
+          </view>
+        </view>
+
+        <picker
+          class="policy-picker-wrap"
+          mode="selector"
+          range="{{yellowOptions}}"
+          value="{{previousYellowIndex}}"
+          disabled="{{!academicAlert.eligible}}"
+          bindchange="onPreviousYellowChange"
+        >
+          <view class="policy-picker {{!academicAlert.eligible ? 'policy-picker-disabled' : ''}}">
+            <text class="policy-label">此前黄牌</text>
+            <text class="policy-value">{{yellowOptions[previousYellowIndex]}}</text>
+            <text class="policy-chevron">⌄</text>
+          </view>
+        </picker>
+      </view>
+
+      <view wx:if="{{academicAlert.eligible}}" class="policy-thresholds">
+        <view
+          wx:for="{{academicAlert.thresholdItems}}"
+          wx:key="key"
+          class="policy-threshold policy-threshold-{{item.key}}"
+        >
+          <text class="policy-threshold-label">{{item.label}}</text>
+          <text class="policy-threshold-value">低于 {{item.value}}</text>
+          <text class="policy-threshold-unit">学分</text>
+        </view>
+      </view>
+
+      <view wx:if="{{academicAlert.numericRuleText}}" class="policy-numeric-rule">
+        {{academicAlert.numericRuleText}}
+      </view>
+
+      <view class="policy-summary">{{academicAlert.summary}}</view>
+
+      <view wx:if="{{academicAlert.actionRequired}}" class="policy-action">
+        <view class="policy-action-title">可能的学籍影响（仅供参考）</view>
+        <text>{{academicAlert.actionText}}</text>
+      </view>
+      <view wx:else class="policy-safe">
+        <text>{{academicAlert.ratioText}}</text>
+        <text wx:if="{{academicAlert.cumulativeYellows === 1}}" class="policy-safe-warn">
+          已累计 1 次黄牌；按公开规则模拟，再次出现黄牌可能涉及学籍处理，实际情况以学校认定为准。
+        </text>
+      </view>
+
+      <view class="policy-rule">
+        <text class="policy-rule-title">学校公开规则摘要（供自查参考）</text>
+        <text class="policy-rule-text">每学年秋季对普通本科生（新生除外）梳理一次。未达到总学分 3/4（二年级为 2/3）给予黄牌；未达到 2/3（二年级为 1/2）给予红牌。红牌或累计两次黄牌，应转入专科学习，否则予以退学处理。以上仅为规则摘要，本工具不作出学籍处理决定。</text>
+      </view>
+    </view>
+
+    <block wx:if="{{hasWarnings}}">
+      <view class="section-heading">
+        <view>
+          <text class="section-title">未达标模块</text>
+          <text class="section-subtitle">逐项补齐，优先处理缺口较大的模块</text>
+        </view>
+        <text class="warning-number">{{moduleWarnings.length}}</text>
+      </view>
+
+      <view
+        wx:for="{{moduleWarnings}}"
+        wx:key="id"
+        class="alert-module rise-in"
+        style="animation-delay: {{index * 40}}ms;"
+      >
+        <view class="alert-module-top">
+          <view class="alert-module-index">{{index + 1}}</view>
+          <view class="alert-module-info">
+            <text class="alert-module-name">{{item.name}}</text>
+            <text class="alert-module-description">{{item.description}}</text>
+          </view>
+          <text class="alert-module-percent">{{item.percent}}%</text>
+        </view>
+
+        <view class="alert-number-row">
+          <view class="alert-number-block">
+            <text class="alert-number-value">{{item.earnedText}}</text>
+            <text class="alert-number-label">已修学分</text>
+          </view>
+          <view class="alert-threshold">
+            <text>最低要求</text>
+            <text class="threshold-value">{{item.minCreditsText}} 学分</text>
+          </view>
+        </view>
+
+        <view class="alert-track">
+          <view class="alert-fill" style="{{item.progressStyle}}"></view>
+        </view>
+        <view class="alert-distance">{{item.distanceText}}</view>
+      </view>
+
+      <block wx:if="{{ruleWarnings.length}}">
+        <view class="section-heading rule-warning-heading">
+          <view>
+            <text class="section-title">规则提醒</text>
+            <text class="section-subtitle">学分之外的组合限制</text>
+          </view>
+        </view>
+
+        <view
+          wx:for="{{ruleWarnings}}"
+          wx:key="id"
+          class="rule-warning-card"
+        >
+          <view class="rule-warning-symbol">!</view>
+          <view class="rule-warning-body">
+            <view class="rule-warning-top">
+              <text class="rule-warning-title">{{item.title}}</text>
+              <text class="rule-warning-status">{{item.statusText}}</text>
+            </view>
+            <text class="rule-warning-text">{{item.text}}</text>
+            <text wx:if="{{item.valueText}}" class="rule-warning-value">{{item.valueText}}</text>
+          </view>
+        </view>
+      </block>
+    </block>
+
+    <view wx:else class="success-card card-surface">
+      <view class="success-mark">✓</view>
+      <text class="success-title">模块与互斥规则已通过</text>
+      <text class="success-copy">当前专业的模块学分和已录入的互斥规则都已达标；秋季自查结果仅供个人参考，实际以学校通知为准。</text>
+    </view>
+
+    <button class="primary-button input-cta" bindtap="goInput" hover-class="button-hover">
+      去录入 / 调整课程
+    </button>
+    <button class="ghost-button board-button" bindtap="goDashboard" hover-class="ghost-hover">
+      返回学分看板
+    </button>
+
+    <view class="warning-footnote">
+      <text>个人开发工具，不接入学校教务系统</text>
+      <text>预警基于本地课程和学时模拟计算，仅供参考</text>
+    </view>
+  </view>
+</view>
+
+<view wx:else class="warning-loading page-shell">
+  <view class="warning-loading-ring"></view>
+  <text>正在生成预警…</text>
+</view>
